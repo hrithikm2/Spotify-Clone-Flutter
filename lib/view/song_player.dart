@@ -12,12 +12,15 @@ class AudioPlayerScreen extends StatefulWidget {
   State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
 }
 
-class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
+class _AudioPlayerScreenState extends State<AudioPlayerScreen>
+    with SingleTickerProviderStateMixin {
   final audioPlayer = AudioPlayer();
   final CarouselController _controller = CarouselController();
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
+  late AnimationController _animationController;
+  bool isAnimating = false;
 
   final List<String> images = [
     'assets/audio/audio_poster/calmdown1.jpg',
@@ -78,6 +81,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         position = event;
       });
     });
+
+    // Initialise animation controller
+    _animationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 300));
   }
 
   Future setAudio() async {
@@ -87,6 +94,15 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     // Load audio from URL
     String assetPath = 'audio/Calm-Down.mp3';
     audioPlayer.setSourceAsset(assetPath);
+  }
+
+  void changeIcon() {
+    setState(() {
+      isAnimating = !isAnimating;
+      isAnimating
+          ? _animationController.forward()
+          : _animationController.reverse();
+    });
   }
 
   @override
@@ -255,18 +271,20 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                         CircleAvatar(
                           radius: 35,
                           backgroundColor: Colors.white,
-                          child: IconButton(
-                            icon: Icon(
-                              isPlaying ? Icons.pause : Icons.play_arrow,
+                          child: GestureDetector(
+                            child: AnimatedIcon(
+                              icon: AnimatedIcons.pause_play,
+                              progress: _animationController,
                               color: Colors.black,
+                              size: 40,
                             ),
-                            iconSize: 40,
-                            onPressed: () async {
+                            onTap: () async {
                               if (isPlaying) {
                                 await audioPlayer.pause();
                               } else {
                                 await audioPlayer.resume();
                               }
+                              changeIcon();
                             },
                           ),
                         ),
